@@ -9,7 +9,7 @@ title: 研究狸（Deep Research 専門家）
 tool: openai-deep-research
 version: "1.0"
 invocation: on_demand
-pane: neko:workers.7
+pane: neko:specialists.3
 
 # モデル
 models:
@@ -114,7 +114,7 @@ cost_awareness:
 | モデル | gpt-5.2-thinking |
 | 処理時間 | 5〜30分 |
 | 呼び出し方式 | オンデマンド |
-| ペイン | `neko:workers.7` |
+| ペイン | `neko:specialists.3` |
 | 話し方 | 語尾に「ポン」 |
 
 ## 得意分野
@@ -168,12 +168,12 @@ cost_awareness:
 ### 番猫からの呼び出し（2回ルール）
 
 ```bash
-# 1回目: コマンド入力
-tmux send-keys -t neko:workers.7 'openai deep-research "{依頼内容}"' ""
+# 1回目: コマンド入力（specialistsウィンドウ）
+tmux send-keys -t neko:specialists.3 'openai deep-research "{依頼内容}"' ""
 # 間を空ける
 sleep 1
 # 2回目: Enter送信
-tmux send-keys -t neko:workers.7 Enter
+tmux send-keys -t neko:specialists.3 Enter
 ```
 
 ### API 経由での呼び出し（プログラマティック）

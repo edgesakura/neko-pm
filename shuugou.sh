@@ -6,9 +6,10 @@
 #   ./shuugou.sh -w 5     # 子猫5匹で起動
 #   ./shuugou.sh --help   # ヘルプ表示
 #
-# ペイン構成:
-#   ウィンドウ "boss":    ボスねこ専用
-#   ウィンドウ "workers": 番猫 + 子猫 + 長老猫 + 目利きフクロウ
+# ウィンドウ構成（3ウィンドウ）:
+#   ウィンドウ "boss":        ボスねこ専用（Opus・作戦指揮）
+#   ウィンドウ "workers":     番猫 + 子猫たち（Sonnet・実装作業）
+#   ウィンドウ "specialists": 長老猫 + フクロウ + キツネ + 研究狸（オンデマンド）
 
 set -e
 
@@ -36,9 +37,10 @@ show_help() {
     echo "  -w, --workers N   子猫の数を指定（デフォルト: 2）"
     echo "  -h, --help        このヘルプを表示"
     echo ""
-    echo "ペイン構成:"
-    echo "  ウィンドウ 'boss':    ボスねこ専用"
-    echo "  ウィンドウ 'workers': 番猫 + 子猫 + 長老猫"
+    echo "ウィンドウ構成:"
+    echo "  'boss':        ボスねこ（Opus・作戦指揮）"
+    echo "  'workers':     番猫 + 子猫たち（Sonnet・実装作業）"
+    echo "  'specialists': 長老猫 + フクロウ + キツネ + 研究狸（オンデマンド）"
     echo ""
     echo "例:"
     echo "  $0              # 子猫2匹で起動"
@@ -273,7 +275,7 @@ LAUNCHER_EOF
 chmod +x "${LAUNCHER_DIR}/tanuki-launcher.sh"
 
 # ===========================================
-# tmuxセッション作成（2ウィンドウ構成）
+# tmuxセッション作成（3ウィンドウ構成）
 # ===========================================
 echo -e "${GREEN}📦 tmuxセッション作成中にゃ...${NC}"
 
@@ -281,43 +283,42 @@ echo -e "${GREEN}📦 tmuxセッション作成中にゃ...${NC}"
 tmux new-session -d -s $SESSION_NAME -n boss
 tmux send-keys -t ${SESSION_NAME}:boss "echo '🐱 ボスねこ起動にゃ〜'; ${LAUNCHER_DIR}/boss-launcher.sh" Enter
 
-# ウィンドウ2: workers（番猫 + 子猫 + 長老猫）
+# ウィンドウ2: workers（番猫 + 子猫たち）
 tmux new-window -t ${SESSION_NAME} -n workers
 
 # 番猫（ペイン0）
 tmux send-keys -t ${SESSION_NAME}:workers "echo '🐱 番猫起動にゃ〜'; ${LAUNCHER_DIR}/guard-launcher.sh" Enter
 
-# 長老猫（ペイン1）- 右に分割
-tmux split-window -t ${SESSION_NAME}:workers -h
-tmux send-keys -t ${SESSION_NAME}:workers.1 "echo '🐱 長老猫起動にゃ〜'; ${LAUNCHER_DIR}/elder-launcher.sh" Enter
-
-# 目利きフクロウ（ペイン2）- 下に分割
-tmux split-window -t ${SESSION_NAME}:workers -v
-tmux send-keys -t ${SESSION_NAME}:workers.2 "echo '🦉 目利きフクロウ起動ホー'; ${LAUNCHER_DIR}/owl-launcher.sh" Enter
-
-# 子猫たち（ペイン3〜）- 下に追加
+# 子猫たち（ペイン1〜）- 右に分割して追加
 for i in $(seq 1 $WORKERS); do
-    tmux split-window -t ${SESSION_NAME}:workers -v
+    tmux split-window -t ${SESSION_NAME}:workers -h
     tmux send-keys -t ${SESSION_NAME}:workers "echo '🐱 子猫${i}起動にゃ〜'; ${LAUNCHER_DIR}/kitten${i}-launcher.sh" Enter
 done
 
-# オンデマンドCodex（ペイン）- 番猫から召喚される用
-tmux split-window -t ${SESSION_NAME}:workers -v
-ONDEMAND_PANE=$((3 + WORKERS))  # 子猫の後のペイン番号
-tmux send-keys -t ${SESSION_NAME}:workers.${ONDEMAND_PANE} "echo '🦉 オンデマンドCodexペイン準備完了ホー！番猫からの召喚を待つホー'" Enter
-
-# 賢者キツネ（ペイン）- リサーチ用
-tmux split-window -t ${SESSION_NAME}:workers -v
-FOX_PANE=$((4 + WORKERS))
-tmux send-keys -t ${SESSION_NAME}:workers.${FOX_PANE} "echo '🦊 賢者キツネ起動コン'; ${LAUNCHER_DIR}/fox-launcher.sh" Enter
-
-# 研究狸（ペイン）- 深い調査用・ボスねこの相談相手
-tmux split-window -t ${SESSION_NAME}:workers -v
-TANUKI_PANE=$((5 + WORKERS))
-tmux send-keys -t ${SESSION_NAME}:workers.${TANUKI_PANE} "echo '🦝 研究狸起動ポン'; ${LAUNCHER_DIR}/tanuki-launcher.sh" Enter
-
 # レイアウト調整（タイル状に並べる）
 tmux select-layout -t ${SESSION_NAME}:workers tiled
+
+# ウィンドウ3: specialists（長老猫 + フクロウ + キツネ + 研究狸）
+# オンデマンドで呼び出されるスペシャリストたち
+tmux new-window -t ${SESSION_NAME} -n specialists
+
+# 長老猫（ペイン0）- 重大な判断時に召喚
+tmux send-keys -t ${SESSION_NAME}:specialists "echo '🐱 長老猫起動にゃ〜'; ${LAUNCHER_DIR}/elder-launcher.sh" Enter
+
+# 目利きフクロウ（ペイン1）- コードレビュー時に召喚
+tmux split-window -t ${SESSION_NAME}:specialists -h
+tmux send-keys -t ${SESSION_NAME}:specialists.1 "echo '🦉 目利きフクロウ起動ホー'; ${LAUNCHER_DIR}/owl-launcher.sh" Enter
+
+# 賢者キツネ（ペイン2）- リサーチ時に召喚
+tmux split-window -t ${SESSION_NAME}:specialists -v
+tmux send-keys -t ${SESSION_NAME}:specialists.2 "echo '🦊 賢者キツネ起動コン'; ${LAUNCHER_DIR}/fox-launcher.sh" Enter
+
+# 研究狸（ペイン3）- 深い調査時に召喚・ボスねこの相談相手
+tmux split-window -t ${SESSION_NAME}:specialists -v
+tmux send-keys -t ${SESSION_NAME}:specialists.3 "echo '🦝 研究狸起動ポン'; ${LAUNCHER_DIR}/tanuki-launcher.sh" Enter
+
+# レイアウト調整（タイル状に並べる）
+tmux select-layout -t ${SESSION_NAME}:specialists tiled
 
 # ワークスペース信頼の自動承認（5秒待ってからEnter送信）
 echo -e "${YELLOW}⏳ ワークスペース承認中にゃ...${NC}"
@@ -326,10 +327,15 @@ sleep 5
 # bossウィンドウ
 tmux send-keys -t ${SESSION_NAME}:boss Enter 2>/dev/null || true
 
-# workersウィンドウ（番猫 + 長老猫 + 常駐フクロウ + 子猫 + オンデマンドCodex + 賢者キツネ + 研究狸）
-WORKER_PANES=$((6 + WORKERS))  # 番猫 + 長老猫 + 常駐フクロウ + 子猫 + オンデマンドCodex + 賢者キツネ + 研究狸
+# workersウィンドウ（番猫 + 子猫たち）
+WORKER_PANES=$((1 + WORKERS))  # 番猫 + 子猫
 for i in $(seq 0 $((WORKER_PANES - 1))); do
     tmux send-keys -t ${SESSION_NAME}:workers.${i} Enter 2>/dev/null || true
+done
+
+# specialistsウィンドウ（長老猫 + フクロウ + キツネ + 研究狸）
+for i in $(seq 0 3); do
+    tmux send-keys -t ${SESSION_NAME}:specialists.${i} Enter 2>/dev/null || true
 done
 sleep 2
 
@@ -353,22 +359,24 @@ echo ""
 echo -e "${YELLOW}【ウィンドウ構成】${NC}"
 echo ""
 echo -e "📌 ウィンドウ ${CYAN}boss${NC} (Ctrl+b 0):"
-echo -e "  └─ ボスねこ（Opus）"
+echo -e "  └─ ボスねこ（Opus）- 作戦指揮・ユーザー相談"
 echo ""
 echo -e "📌 ウィンドウ ${CYAN}workers${NC} (Ctrl+b 1):"
-echo -e "  ├─ ペイン0: 番猫（Sonnet）"
-echo -e "  ├─ ペイン1: 長老猫（Opus）"
-echo -e "  ├─ ペイン2: 🦉常駐フクロウ（Codex CLI・自動レビュー）"
+echo -e "  ├─ ペイン0: 番猫（Sonnet）- タスク管理"
 for i in $(seq 1 $WORKERS); do
-    echo -e "  ├─ ペイン$((i + 2)): 子猫${i}（Sonnet）"
+    echo -e "  └─ ペイン${i}: 子猫${i}（Sonnet）- 実装作業"
 done
-echo -e "  ├─ ペイン$((3 + WORKERS)): 🦉オンデマンドCodex（複雑タスク用）"
-echo -e "  ├─ ペイン$((4 + WORKERS)): 🦊賢者キツネ（Gemini 3 Pro・リサーチ）"
-echo -e "  └─ ペイン$((5 + WORKERS)): 🦝研究狸（GPT-5.2-thinking・深い調査）"
+echo ""
+echo -e "📌 ウィンドウ ${CYAN}specialists${NC} (Ctrl+b 2):"
+echo -e "  ├─ ペイン0: 🐱長老猫（Opus）- 重大な判断"
+echo -e "  ├─ ペイン1: 🦉目利きフクロウ（Codex）- コードレビュー"
+echo -e "  ├─ ペイン2: 🦊賢者キツネ（Gemini 3 Pro）- リサーチ"
+echo -e "  └─ ペイン3: 🦝研究狸（GPT-5.2-thinking）- 深い調査"
 echo ""
 echo "接続コマンド:"
 echo -e "  ${YELLOW}tmux attach -t ${SESSION_NAME}${NC}"
 echo ""
-echo "ウィンドウ切り替え: ${CYAN}Ctrl+b 0${NC}(boss) / ${CYAN}Ctrl+b 1${NC}(workers)"
+echo "ウィンドウ切り替え:"
+echo -e "  ${CYAN}Ctrl+b 0${NC}(boss) / ${CYAN}Ctrl+b 1${NC}(workers) / ${CYAN}Ctrl+b 2${NC}(specialists)"
 echo "ペイン移動: ${CYAN}Ctrl+b → 矢印キー${NC}"
 echo ""

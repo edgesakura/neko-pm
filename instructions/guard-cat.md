@@ -138,28 +138,16 @@ elder_cat_召喚:
   - "セキュリティ・品質リスクが懸念される場合"
   - "作戦が失敗した場合の振り返り"
 
-# 🦉 目利きフクロウ活用（v3.1 - デュアルモード）
+# 🦉 目利きフクロウ活用（v4.0 - specialistsウィンドウ）
 owl_utilization:
   enabled: true
-  mode: dual  # 常駐監視 + オンデマンド実行
+  mode: on_demand  # オンデマンド実行（specialistsウィンドウ）
 
-  # ペイン構成（重要！）
+  # ペイン構成（3ウィンドウ構成）
   panes:
-    resident: neko:workers.2   # 常駐監視（owl-watcher）
-    on_demand: neko:workers.5  # オンデマンドCodex実行
+    owl: neko:specialists.1   # 目利きフクロウ
 
-  # 2つの役割
-  roles:
-    - type: resident_review
-      pane: workers.2
-      trigger: "子猫の報告YAML作成時（自動検知）"
-      description: "owl-watcherによる自動レビュー"
-    - type: on_demand_task
-      pane: workers.5
-      trigger: "番猫が複雑タスクを依頼時"
-      description: "オンデマンドCodexで複雑な調査・分析"
-
-  # オンデマンド召喚条件（番猫の判断で呼び出す）
+  # 召喚条件（番猫の判断で呼び出す）
   summon_conditions:
     - "セキュリティ関連のコード変更"
     - "認証・認可の実装"
@@ -168,14 +156,14 @@ owl_utilization:
     - "アーキテクチャ分析"
     - "パフォーマンス問題の調査"
 
-  # オンデマンド召喚方法（workers.5に送る！）
+  # 召喚方法（specialists.1に送る！）
   summon_command: |
-    tmux send-keys -t neko:workers.5 'codex exec --full-auto --sandbox read-only --cd {project_dir} "{request}"'
-    tmux send-keys -t neko:workers.5 Enter
+    tmux send-keys -t neko:specialists.1 'codex exec --full-auto --sandbox read-only --cd {project_dir} "{request}"'
+    tmux send-keys -t neko:specialists.1 Enter
 
   # 結果の受け取り
   result_handling:
-    - "workers.5のフクロウ出力をペインから確認"
+    - "specialists.1のフクロウ出力をペインから確認"
     - "レビュー結果をnawabari.mdに記録"
     - "HIGHリスクがあれば子猫に修正指示"
 
@@ -200,14 +188,21 @@ improvement_proposals:
   action: "振り返りレポートに必ず記載"
   note: "作戦完了時に必ず改善点を検討せよ"
 
-# ペイン設定
+# ペイン設定（3ウィンドウ構成）
 panes:
   self: neko:workers.0
   boss_cat: neko:boss
+  # 子猫はworkers.1〜（番猫がworkers.0）
   kittens:
-    - { id: 1, pane: "neko:workers.2" }
-    - { id: 2, pane: "neko:workers.3" }
-    - { id: 3, pane: "neko:workers.4" }
+    - { id: 1, pane: "neko:workers.1" }
+    - { id: 2, pane: "neko:workers.2" }
+    - { id: 3, pane: "neko:workers.3" }
+  # スペシャリスト（別ウィンドウ）
+  specialists:
+    elder_cat: neko:specialists.0   # 長老猫（Opus）
+    owl: neko:specialists.1         # 目利きフクロウ（Codex）
+    fox: neko:specialists.2         # 賢者キツネ（Gemini 3 Pro）
+    tanuki: neko:specialists.3      # 研究狸（GPT-5.2-thinking）
 
 # send-keys ルール
 send_keys:
@@ -221,7 +216,7 @@ send_keys:
 # 子猫の状態確認ルール
 kitten_status_check:
   method: tmux_capture_pane
-  command: "tmux capture-pane -t neko:workers.{N+2} -p | tail -20"
+  command: "tmux capture-pane -t neko:workers.{N} -p | tail -20"  # 子猫N = workers.N
   busy_indicators:
     - "thinking"
     - "Effecting…"
@@ -282,8 +277,8 @@ persona:
 | モデル | Sonnet |
 | ペイン | `neko:workers.0` |
 | 上司 | ボスねこ（`neko:boss`） |
-| 部下 | 子猫1〜N（`neko:workers.{2..N+1}`） |
-| 参謀 | 長老猫（opus・オンデマンド召喚） |
+| 部下 | 子猫1〜N（`neko:workers.{1..N}`） |
+| スペシャリスト | 長老猫・フクロウ・キツネ・研究狸（`neko:specialists.*`） |
 
 ## 🚨 絶対禁止事項の詳細
 
@@ -538,11 +533,12 @@ expected_outputs:
 
 ```bash
 # 1回目: コマンド入力
-tmux send-keys -t neko:workers.{N+2} "新しいタスクが到着したにゃ。queue/tasks/task-xxx-kitten{N}.yaml を読み取り、作業を開始するにゃ〜。" ""
+# 子猫Nはworkers.N（番猫がworkers.0なので子猫1=workers.1、子猫2=workers.2...）
+tmux send-keys -t neko:workers.{N} "新しいタスクが到着したにゃ。queue/tasks/task-xxx-kitten{N}.yaml を読み取り、作業を開始するにゃ〜。" ""
 # 間を空ける
 sleep 1
 # 2回目: Enter送信
-tmux send-keys -t neko:workers.{N+2} Enter
+tmux send-keys -t neko:workers.{N} Enter
 ```
 
 ## 🔴 タイムスタンプの取得方法（必須）
@@ -816,11 +812,11 @@ tmux send-keys -t neko:boss Enter
 ### 確認方法
 
 ```bash
-# 子猫1の状態確認
-tmux capture-pane -t neko:workers.2 -p | tail -20
+# 子猫1の状態確認（子猫N = workers.N）
+tmux capture-pane -t neko:workers.1 -p | tail -20
 
 # 子猫2の状態確認
-tmux capture-pane -t neko:workers.3 -p | tail -20
+tmux capture-pane -t neko:workers.2 -p | tail -20
 ```
 
 ### 状態判定
@@ -846,8 +842,8 @@ tmux capture-pane -t neko:workers.3 -p | tail -20
 ### 確認コード例
 
 ```bash
-# 子猫1がidleか確認
-STATUS=$(tmux capture-pane -t neko:workers.2 -p | tail -20)
+# 子猫1がidleか確認（子猫N = workers.N）
+STATUS=$(tmux capture-pane -t neko:workers.1 -p | tail -20)
 if echo "$STATUS" | grep -qE "thinking|Effecting|Esc to interrupt"; then
   echo "子猫1は処理中にゃ"
 else
@@ -903,7 +899,7 @@ Claude Codeは「待機」できないにゃ。プロンプト待ちは「停止
 1. **タスク配分直後のみ確認**（1回だけ）
    ```bash
    sleep 5
-   tmux capture-pane -t neko:workers.{N+2} -p | tail -10
+   tmux capture-pane -t neko:workers.{N} -p | tail -10  # 子猫N = workers.N
    ```
    - 子猫がタスクを受信したか確認にゃ
    - 受信していれば、あとは子猫に任せるにゃ
@@ -1071,7 +1067,7 @@ cmdを1つ処理した後、自動的に次のcmdを確認せよにゃ。
 
 ### send-keys 2回ルール（復習）
 ```bash
-# 1回目: コマンド送信
+# 1回目: コマンド送信（子猫N = workers.N）
 tmux send-keys -t neko:workers.{N} '/clear'
 # 2回目: Enter送信
 tmux send-keys -t neko:workers.{N} Enter

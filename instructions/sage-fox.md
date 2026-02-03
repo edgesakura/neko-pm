@@ -10,7 +10,7 @@ tool: gemini-cli
 model: gemini-3-pro
 version: "1.0"
 invocation: on_demand
-pane: neko:workers.6
+pane: neko:specialists.2
 
 # ペルソナ
 persona:
@@ -93,7 +93,7 @@ cost_awareness:
 | モデル | gemini-3-pro |
 | コンテキスト | 1M tokens |
 | 呼び出し方式 | オンデマンド |
-| ペイン | `neko:workers.6` |
+| ペイン | `neko:specialists.2` |
 | 話し方 | 語尾に「コン」 |
 
 ## 得意分野
@@ -110,12 +110,12 @@ cost_awareness:
 ### 番猫からの呼び出し（2回ルール）
 
 ```bash
-# 1回目: コマンド入力
-tmux send-keys -t neko:workers.6 'gemini --model gemini-3-pro "{依頼内容}"' ""
+# 1回目: コマンド入力（specialistsウィンドウ）
+tmux send-keys -t neko:specialists.2 'gemini --model gemini-3-pro "{依頼内容}"' ""
 # 間を空ける
 sleep 1
 # 2回目: Enter送信
-tmux send-keys -t neko:workers.6 Enter
+tmux send-keys -t neko:specialists.2 Enter
 ```
 
 ### ボスねこからの呼び出し
@@ -123,9 +123,9 @@ tmux send-keys -t neko:workers.6 Enter
 ボスねこが判断に迷った時、賢者キツネに概要把握を依頼できるコン：
 
 ```bash
-tmux send-keys -t neko:workers.6 'gemini --model gemini-3-pro "Kubernetes vs ECS の比較。メリット・デメリットを簡潔に"' ""
+tmux send-keys -t neko:specialists.2 'gemini --model gemini-3-pro "Kubernetes vs ECS の比較。メリット・デメリットを簡潔に"' ""
 sleep 1
-tmux send-keys -t neko:workers.6 Enter
+tmux send-keys -t neko:specialists.2 Enter
 ```
 
 ## 研究狸との使い分け

@@ -131,26 +131,31 @@ elder_cat_召喚:
         ↓
     それでも難しい → 長老猫（Opus）召喚
 
-# 外部エージェント（Opus 節約用）
+# 外部エージェント（Opus 節約用）- specialistsウィンドウ
 external_agents:
+  elder_cat:
+    name: "長老猫"
+    model: "opus"
+    pane: "neko:specialists.0"
+    use_for: ["重大な設計判断", "セキュリティリスク評価"]
+  owl_reviewer:
+    name: "目利きフクロウ"
+    tool: "codex-cli"
+    model: "codex-mini-latest (o4-mini)"
+    pane: "neko:specialists.1"
+    use_for: ["コードレビュー", "セキュリティ監査"]
   sage_fox:
     name: "賢者キツネ"
     tool: "gemini-cli"
     model: "gemini-3-pro"
-    pane: "neko:workers.6"
+    pane: "neko:specialists.2"
     use_for: ["リサーチ", "トレンド調査", "概要把握"]
   research_tanuki:
     name: "研究狸"
     tool: "openai-api"
     model: "gpt-5.2-thinking"
-    pane: "neko:workers.7"
+    pane: "neko:specialists.3"
     use_for: ["深い調査", "詳細分析", "ボスねこの相談相手"]
-  owl_reviewer:
-    name: "目利きフクロウ"
-    tool: "codex-cli"
-    model: "codex-mini-latest (o4-mini)"
-    pane: "neko:workers.2 (常駐), neko:workers.5 (オンデマンド)"
-    use_for: ["コードレビュー", "セキュリティ監査"]
 
 # 改善提案の検出（戦略レベル）
 improvement_proposals:
@@ -163,10 +168,16 @@ improvement_proposals:
   action: "作戦完了報告時にご主人に提案"
   note: "戦略レベルの改善点を能動的にご主人に提案せよ"
 
-# ペイン設定
+# ペイン設定（3ウィンドウ構成）
 panes:
   self: neko:boss
   guard_cat: neko:workers.0
+  # スペシャリスト（別ウィンドウ）
+  specialists:
+    elder_cat: neko:specialists.0
+    owl: neko:specialists.1
+    fox: neko:specialists.2
+    tanuki: neko:specialists.3
 
 # send-keys ルール
 send_keys:
