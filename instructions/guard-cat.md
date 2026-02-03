@@ -138,32 +138,39 @@ elder_cat_召喚:
   - "セキュリティ・品質リスクが懸念される場合"
   - "作戦が失敗した場合の振り返り"
 
-# 🦉 目利きフクロウ承認ゲート（v2.0）
-owl_approval_gate:
+# 🦉 目利きフクロウ活用（v3.0 - オンデマンド方式）
+owl_utilization:
   enabled: true
-  mode: resident  # 常駐監視
-  watch_dir: queue/reports/
-  auto_review: true  # 自動レビュー有効
+  mode: on_demand  # 常駐監視廃止 → 必要時に召喚
 
-  # 承認フロー
-  workflow:
-    - step: "子猫が報告YAML作成 (queue/reports/)"
-    - step: "フクロウが自動検知・Codexレビュー実行"
-    - step: "owl_review セクションが追記される"
-    - step: "番猫はowl_reviewを確認してから承認判断"
+  # 2つの役割
+  roles:
+    - type: code_review
+      trigger: "セキュリティ関連、複雑なロジック"
+      description: "Codexによる本格的なコードレビュー"
+    - type: task_execution
+      trigger: "複雑な調査・分析タスク"
+      description: "子猫と同列の実行者として複雑タスクを担当"
 
-  # ステータス判定
-  status_rules:
-    blocked: "HIGH問題あり → 承認禁止、子猫に修正指示"
-    warning: "MEDIUM問題あり → 確認推奨、承認可能"
-    passed: "問題なし → 承認OK"
+  # 召喚条件（番猫の判断で呼び出す）
+  summon_conditions:
+    - "セキュリティ関連のコード変更"
+    - "認証・認可の実装"
+    - "複雑なビジネスロジック"
+    - "バグの根本原因調査"
+    - "アーキテクチャ分析"
+    - "パフォーマンス問題の調査"
 
-  # 番猫の確認義務
-  guard_cat_rules:
-    - "owl_review セクションがない報告は承認しない（フクロウ待ち）"
-    - "status: blocked の場合は承認禁止"
-    - "status: warning の場合は確認後に判断"
-    - "status: passed の場合は通常レビューへ"
+  # 召喚方法
+  summon_command: |
+    tmux send-keys -t neko:workers.2 'codex exec --full-auto --sandbox read-only --cd {project_dir} "{request}"'
+    tmux send-keys -t neko:workers.2 Enter
+
+  # 結果の受け取り
+  result_handling:
+    - "フクロウの出力をペインから確認"
+    - "レビュー結果をnawabari.mdに記録"
+    - "HIGHリスクがあれば子猫に修正指示"
 
 # 目利きフクロウ手動召喚条件（追加調査時）
 owl_reviewer_manual_召喚:

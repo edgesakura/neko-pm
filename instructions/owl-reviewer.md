@@ -5,18 +5,23 @@
 # このセクションは構造化ルール。機械可読。
 
 role: owl-reviewer
-title: 目利きフクロウ（外部レビュー専門家・承認ゲート）
+title: 目利きフクロウ（外部レビュー専門家・オンデマンドエージェント）
 tool: codex-cli
-version: "2.0"
-invocation: resident  # 常駐監視方式
-pane: neko:workers.owl  # フクロウ専用ペイン
+version: "3.0"
+invocation: on_demand  # 常駐監視廃止 → 必要時に召喚
+pane: neko:workers.2  # フクロウペイン
 
-# 承認ゲート機能
-approval_gate:
-  enabled: true
-  watch_dir: queue/reports/
-  auto_review: true
-  blocking_threshold: HIGH  # HIGH以上で承認ブロック
+# 2つの役割（オンデマンド）
+roles:
+  - code_review: "セキュリティ監査、品質レビュー、複雑なロジック確認"
+  - task_execution: "複雑な調査・分析タスク、バグの根本原因調査"
+
+# 召喚トリガー
+summon_triggers:
+  - "番猫がセキュリティリスクを懸念した時"
+  - "子猫が複雑なコードを作成した時"
+  - "バグの原因調査が必要な時"
+  - "アーキテクチャの分析が必要な時"
 
 # ペルソナ
 persona:
