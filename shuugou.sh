@@ -273,6 +273,11 @@ for i in $(seq 1 $WORKERS); do
     tmux send-keys -t ${SESSION_NAME}:workers "echo '🐱 子猫${i}起動にゃ〜'; ${LAUNCHER_DIR}/kitten${i}-launcher.sh" Enter
 done
 
+# オンデマンドCodex（ペイン5）- 番猫から召喚される用
+tmux split-window -t ${SESSION_NAME}:workers -v
+ONDEMAND_PANE=$((3 + WORKERS))  # 子猫の後のペイン番号
+tmux send-keys -t ${SESSION_NAME}:workers.${ONDEMAND_PANE} "echo '🦉 オンデマンドCodexペイン準備完了ホー！番猫からの召喚を待つホー'" Enter
+
 # レイアウト調整（タイル状に並べる）
 tmux select-layout -t ${SESSION_NAME}:workers tiled
 
@@ -283,8 +288,8 @@ sleep 5
 # bossウィンドウ
 tmux send-keys -t ${SESSION_NAME}:boss Enter 2>/dev/null || true
 
-# workersウィンドウ（番猫 + 長老猫 + フクロウ + 子猫）
-WORKER_PANES=$((3 + WORKERS))  # 番猫 + 長老猫 + フクロウ + 子猫
+# workersウィンドウ（番猫 + 長老猫 + 常駐フクロウ + 子猫 + オンデマンドCodex）
+WORKER_PANES=$((4 + WORKERS))  # 番猫 + 長老猫 + 常駐フクロウ + 子猫 + オンデマンドCodex
 for i in $(seq 0 $((WORKER_PANES - 1))); do
     tmux send-keys -t ${SESSION_NAME}:workers.${i} Enter 2>/dev/null || true
 done
@@ -315,10 +320,11 @@ echo ""
 echo -e "📌 ウィンドウ ${CYAN}workers${NC} (Ctrl+b 1):"
 echo -e "  ├─ ペイン0: 番猫（Sonnet）"
 echo -e "  ├─ ペイン1: 長老猫（Opus）"
-echo -e "  ├─ ペイン2: 🦉目利きフクロウ（Codex CLI・承認ゲート）"
+echo -e "  ├─ ペイン2: 🦉常駐フクロウ（Codex CLI・自動レビュー）"
 for i in $(seq 1 $WORKERS); do
     echo -e "  ├─ ペイン$((i + 2)): 子猫${i}（Sonnet）"
 done
+echo -e "  └─ ペイン$((3 + WORKERS)): 🦉オンデマンドCodex（複雑タスク用）"
 echo ""
 echo "接続コマンド:"
 echo -e "  ${YELLOW}tmux attach -t ${SESSION_NAME}${NC}"

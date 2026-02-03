@@ -138,21 +138,28 @@ elder_cat_召喚:
   - "セキュリティ・品質リスクが懸念される場合"
   - "作戦が失敗した場合の振り返り"
 
-# 🦉 目利きフクロウ活用（v3.0 - オンデマンド方式）
+# 🦉 目利きフクロウ活用（v3.1 - デュアルモード）
 owl_utilization:
   enabled: true
-  mode: on_demand  # 常駐監視廃止 → 必要時に召喚
+  mode: dual  # 常駐監視 + オンデマンド実行
+
+  # ペイン構成（重要！）
+  panes:
+    resident: neko:workers.2   # 常駐監視（owl-watcher）
+    on_demand: neko:workers.5  # オンデマンドCodex実行
 
   # 2つの役割
   roles:
-    - type: code_review
-      trigger: "セキュリティ関連、複雑なロジック"
-      description: "Codexによる本格的なコードレビュー"
-    - type: task_execution
-      trigger: "複雑な調査・分析タスク"
-      description: "子猫と同列の実行者として複雑タスクを担当"
+    - type: resident_review
+      pane: workers.2
+      trigger: "子猫の報告YAML作成時（自動検知）"
+      description: "owl-watcherによる自動レビュー"
+    - type: on_demand_task
+      pane: workers.5
+      trigger: "番猫が複雑タスクを依頼時"
+      description: "オンデマンドCodexで複雑な調査・分析"
 
-  # 召喚条件（番猫の判断で呼び出す）
+  # オンデマンド召喚条件（番猫の判断で呼び出す）
   summon_conditions:
     - "セキュリティ関連のコード変更"
     - "認証・認可の実装"
@@ -161,14 +168,14 @@ owl_utilization:
     - "アーキテクチャ分析"
     - "パフォーマンス問題の調査"
 
-  # 召喚方法
+  # オンデマンド召喚方法（workers.5に送る！）
   summon_command: |
-    tmux send-keys -t neko:workers.2 'codex exec --full-auto --sandbox read-only --cd {project_dir} "{request}"'
-    tmux send-keys -t neko:workers.2 Enter
+    tmux send-keys -t neko:workers.5 'codex exec --full-auto --sandbox read-only --cd {project_dir} "{request}"'
+    tmux send-keys -t neko:workers.5 Enter
 
   # 結果の受け取り
   result_handling:
-    - "フクロウの出力をペインから確認"
+    - "workers.5のフクロウ出力をペインから確認"
     - "レビュー結果をnawabari.mdに記録"
     - "HIGHリスクがあれば子猫に修正指示"
 

@@ -5,18 +5,28 @@
 # このセクションは構造化ルール。機械可読。
 
 role: owl-reviewer
-title: 目利きフクロウ（外部レビュー専門家・オンデマンドエージェント）
+title: 目利きフクロウ（外部レビュー専門家・デュアルモード）
 tool: codex-cli
-version: "3.0"
-invocation: on_demand  # 常駐監視廃止 → 必要時に召喚
-pane: neko:workers.2  # フクロウペイン
+version: "3.1"
+invocation: dual  # 常駐監視 + オンデマンド実行
 
-# 2つの役割（オンデマンド）
+# ペイン構成（重要！）
+panes:
+  resident: neko:workers.2    # 常駐監視（owl-watcher）
+  on_demand: neko:workers.5   # オンデマンドCodex実行
+
+# 2つの役割
 roles:
-  - code_review: "セキュリティ監査、品質レビュー、複雑なロジック確認"
-  - task_execution: "複雑な調査・分析タスク、バグの根本原因調査"
+  - resident_review:
+      pane: workers.2
+      mode: "自動検知・自動レビュー"
+      description: "owl-watcherが子猫の報告を監視してCodexレビュー実行"
+  - on_demand_task:
+      pane: workers.5
+      mode: "番猫から召喚"
+      description: "複雑な調査・分析タスクをオンデマンドで実行"
 
-# 召喚トリガー
+# 召喚トリガー（オンデマンド用）
 summon_triggers:
   - "番猫がセキュリティリスクを懸念した時"
   - "子猫が複雑なコードを作成した時"
