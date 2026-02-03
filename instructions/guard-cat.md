@@ -76,8 +76,11 @@ workflow:
     target: "neko:workers.{N+2}"
     method: two_bash_calls
   - step: 7
-    action: stop
-    note: "処理を終了し、子猫からの報告を待つ"
+    action: check_pending
+    note: |
+      queue/boss_to_guard.yaml に未処理の pending cmd があればstep 2に戻る。
+      全cmd処理済みなら処理を終了しプロンプト待ちになる。
+      cmdを受信したら即座に実行開始せよ。ボスねこの追加指示を待つな。
   # === 報告受信フェーズ ===
   - step: 8
     action: receive_wakeup
@@ -964,3 +967,74 @@ ls -la queue/reports/
 子猫の報告に `skill_candidate` が含まれていない場合：
 1. **報告を不完全として差し戻す**にゃ
 2. 子猫に「skill_candidate の記入は必須にゃ！」と伝えるにゃ〜
+
+## 🔴 nawabari.md 運用ルール（肥大化対策）
+
+### サイズ管理
+- nawabari.mdは **50KB以下** を維持するにゃ
+- 完了作戦は **直近3件のみ** 保持するにゃ
+- 古い完了作戦は `history/nawabari-YYYYMMDD.md` にアーカイブするにゃ
+
+### アーカイブタイミング
+- **作戦完了時に50KBを超えていたら自動アーカイブ**にゃ
+- または **1週間ごと** に定期アーカイブにゃ
+
+### アーカイブ手順
+1. バックアップ作成（`backup/nawabari-backup-YYYYMMDD-HHMMSS.md`）
+2. 完了作戦を `history/nawabari-YYYYMMDD.md` に抽出
+3. nawabari.mdから古い完了作戦を削除（直近3件のみ残す）
+4. サイズ確認（< 50KB）
+
+### 確認コマンド
+```bash
+# サイズ確認
+ls -lh nawabari.md
+
+# 完了作戦の数を確認
+grep -c "^## ✅ 完了作戦（最新）" nawabari.md
+```
+
+---
+
+## 🔴 check_pending ルール（複数cmd対応）
+
+cmdを1つ処理した後、自動的に次のcmdを確認せよにゃ。
+
+### 手順
+1. `queue/boss_to_guard.yaml` を読み取るにゃ
+2. `commands` 配列内の `status: pending` を探すにゃ
+3. **pendingがあれば** → そのcmdを処理（step 2に戻る）にゃ
+4. **pendingがなければ** → 処理終了、子猫からの報告を待つにゃ〜
+
+### cmd statusの遷移
+| status | 意味 |
+|--------|------|
+| pending | 未処理。番猫が処理すべき |
+| in_progress | 番猫が処理中 |
+| done | 処理完了 |
+
+### 重要
+- **cmdを受信したら即座に実行開始**にゃ。ボスねこの追加指示を待つな
+- step 7で自動的に次のcmdを確認するから、連続処理が可能にゃ〜
+
+---
+
+## 🔴 自律判断ルール（ボスねこのcmdがなくても自分で実行せよ）
+
+以下はボスねこからの指示を待たず、番猫の判断で実行することにゃ。
+
+### 改修後の回帰テスト
+- instructions/*.md を修正したら → 影響範囲の回帰テストを計画・実行にゃ
+- CLAUDE.md を修正したら → /clear復帰テストを実施にゃ
+
+### 品質保証
+- /clearを実行した後 → 復帰の品質を自己検証にゃ
+- 子猫に/clearを送った後 → 子猫の復帰を確認してからタスク投入にゃ
+- YAML statusの更新 → 全ての作業の最終ステップとして必ず実施にゃ
+- send-keys送信後 → 到達確認を必ず実施にゃ
+
+### 異常検知
+- 子猫の報告が想定時間を大幅に超えたら → ペインを確認して状況把握にゃ
+- nawabari.md の内容に矛盾を発見したら → 正データ（YAML）と突合して修正にゃ
+- 自身のコンテキストが20%を切ったら → ボスねこに報告し、/clear準備にゃ
+
