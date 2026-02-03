@@ -244,6 +244,34 @@ echo ""
 LAUNCHER_EOF
 chmod +x "${LAUNCHER_DIR}/owl-launcher.sh"
 
+# 賢者キツネランチャー生成（Gemini 3 Pro リサーチ）
+cat > "${LAUNCHER_DIR}/fox-launcher.sh" << 'LAUNCHER_EOF'
+#!/bin/bash
+cd "$(dirname "$0")/.."
+echo "🦊 賢者キツネ起動コン！"
+echo "   リサーチ依頼を待つコン"
+echo "   モデル: gemini-3-pro"
+echo ""
+echo "呼び出し例:"
+echo '  gemini --model gemini-3-pro "調査内容"'
+echo ""
+LAUNCHER_EOF
+chmod +x "${LAUNCHER_DIR}/fox-launcher.sh"
+
+# 研究狸ランチャー生成（GPT-5.2-thinking 深い調査）
+cat > "${LAUNCHER_DIR}/tanuki-launcher.sh" << 'LAUNCHER_EOF'
+#!/bin/bash
+cd "$(dirname "$0")/.."
+echo "🦝 研究狸起動ポン！"
+echo "   深い調査依頼を待つポン"
+echo "   モデル: gpt-5.2-thinking"
+echo ""
+echo "呼び出し例:"
+echo '  openai chat --model gpt-5.2-thinking "調査内容"'
+echo ""
+LAUNCHER_EOF
+chmod +x "${LAUNCHER_DIR}/tanuki-launcher.sh"
+
 # ===========================================
 # tmuxセッション作成（2ウィンドウ構成）
 # ===========================================
@@ -273,10 +301,20 @@ for i in $(seq 1 $WORKERS); do
     tmux send-keys -t ${SESSION_NAME}:workers "echo '🐱 子猫${i}起動にゃ〜'; ${LAUNCHER_DIR}/kitten${i}-launcher.sh" Enter
 done
 
-# オンデマンドCodex（ペイン5）- 番猫から召喚される用
+# オンデマンドCodex（ペイン）- 番猫から召喚される用
 tmux split-window -t ${SESSION_NAME}:workers -v
 ONDEMAND_PANE=$((3 + WORKERS))  # 子猫の後のペイン番号
 tmux send-keys -t ${SESSION_NAME}:workers.${ONDEMAND_PANE} "echo '🦉 オンデマンドCodexペイン準備完了ホー！番猫からの召喚を待つホー'" Enter
+
+# 賢者キツネ（ペイン）- リサーチ用
+tmux split-window -t ${SESSION_NAME}:workers -v
+FOX_PANE=$((4 + WORKERS))
+tmux send-keys -t ${SESSION_NAME}:workers.${FOX_PANE} "echo '🦊 賢者キツネ起動コン'; ${LAUNCHER_DIR}/fox-launcher.sh" Enter
+
+# 研究狸（ペイン）- 深い調査用・ボスねこの相談相手
+tmux split-window -t ${SESSION_NAME}:workers -v
+TANUKI_PANE=$((5 + WORKERS))
+tmux send-keys -t ${SESSION_NAME}:workers.${TANUKI_PANE} "echo '🦝 研究狸起動ポン'; ${LAUNCHER_DIR}/tanuki-launcher.sh" Enter
 
 # レイアウト調整（タイル状に並べる）
 tmux select-layout -t ${SESSION_NAME}:workers tiled
@@ -288,8 +326,8 @@ sleep 5
 # bossウィンドウ
 tmux send-keys -t ${SESSION_NAME}:boss Enter 2>/dev/null || true
 
-# workersウィンドウ（番猫 + 長老猫 + 常駐フクロウ + 子猫 + オンデマンドCodex）
-WORKER_PANES=$((4 + WORKERS))  # 番猫 + 長老猫 + 常駐フクロウ + 子猫 + オンデマンドCodex
+# workersウィンドウ（番猫 + 長老猫 + 常駐フクロウ + 子猫 + オンデマンドCodex + 賢者キツネ + 研究狸）
+WORKER_PANES=$((6 + WORKERS))  # 番猫 + 長老猫 + 常駐フクロウ + 子猫 + オンデマンドCodex + 賢者キツネ + 研究狸
 for i in $(seq 0 $((WORKER_PANES - 1))); do
     tmux send-keys -t ${SESSION_NAME}:workers.${i} Enter 2>/dev/null || true
 done
@@ -324,7 +362,9 @@ echo -e "  ├─ ペイン2: 🦉常駐フクロウ（Codex CLI・自動レビ�
 for i in $(seq 1 $WORKERS); do
     echo -e "  ├─ ペイン$((i + 2)): 子猫${i}（Sonnet）"
 done
-echo -e "  └─ ペイン$((3 + WORKERS)): 🦉オンデマンドCodex（複雑タスク用）"
+echo -e "  ├─ ペイン$((3 + WORKERS)): 🦉オンデマンドCodex（複雑タスク用）"
+echo -e "  ├─ ペイン$((4 + WORKERS)): 🦊賢者キツネ（Gemini 3 Pro・リサーチ）"
+echo -e "  └─ ペイン$((5 + WORKERS)): 🦝研究狸（GPT-5.2-thinking・深い調査）"
 echo ""
 echo "接続コマンド:"
 echo -e "  ${YELLOW}tmux attach -t ${SESSION_NAME}${NC}"
